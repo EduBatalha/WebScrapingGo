@@ -1,10 +1,12 @@
 package main
 
-import "WebScrapingGo/controllers"
+import (
+	"WebScrapingGo/controllers"
+	"WebScrapingGo/services"
+)
 
 func main() {
-	controller := controllers.ScraperController{
-		SpreadsheetPath: "urls.xlsx",
-	}
-	controller.ExecuteScraping()
+	scraperService := services.NewScraper()
+	controller := controllers.NewProductController(scraperService)
+	controller.FetchAndDisplayProduct("https://sleepcalm.com.br/produto/colchao-plus")
 }

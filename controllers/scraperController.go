@@ -6,17 +6,20 @@ import (
 )
 
 type ScraperController struct {
-	SpreadsheetPath string
+	ScraperService *services.Scraper
 }
 
-func (sc *ScraperController) ExecuteScraping() {
-	urls, err := services.ReadSheet(sc.SpreadsheetPath)
+func NewProductController(scraper *services.Scraper) *ScraperController {
+	return &ScraperController{
+		ScraperService: scraper,
+	}
+}
+
+func (pc *ScraperController) FetchAndDisplayProduct(url string) {
+	product, err := pc.ScraperService.FetchProductCode(url)
 	if err != nil {
-		views.ShowMessage("Erro ao ler arquivo: " + err.Error())
+		views.DisplayError(err)
 		return
 	}
-
-	for _, url := range urls {
-		services.ScrapeURL(url.URL)
-	}
+	views.DisplayProduct(product)
 }

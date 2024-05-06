@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"WebScrapingGo/views"
+	
 )
 
 func ScrapeURL(url string) {
