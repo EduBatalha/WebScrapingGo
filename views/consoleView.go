@@ -9,6 +9,7 @@ import (
 func DisplayProduct(product *models.Product) {
 	if product != nil {
 		fmt.Printf("New Product ID: %s\n", product.NewId)
+		fmt.Printf("Old Product ID: %s\n", product.OldId)
 	} else {
 		fmt.Println("Product não encontrado.")
 	}
