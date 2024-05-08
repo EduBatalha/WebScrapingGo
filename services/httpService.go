@@ -18,12 +18,10 @@ func RetrieveOldProduct(storeID, productID, storeToken string) (*models.Product,
         return nil, err
     }
 
-    // Set headers
     req.Header.Add("Content-Type", "application/json")
     req.Header.Add("Accept", "application/vnd.trustvox.com; version=1")
     req.Header.Add("Authorization", "Bearer " + storeToken)
 
-    // Perform the request
     res, err := client.Do(req)
     if err != nil {
         log.Printf("Error performing request: %v", err)
@@ -31,27 +29,17 @@ func RetrieveOldProduct(storeID, productID, storeToken string) (*models.Product,
     }
     defer res.Body.Close()
 
-    if res.StatusCode != http.StatusOK {
-        log.Printf("Received non-OK HTTP status code: %d", res.StatusCode)
-        return nil, fmt.Errorf("unexpected status code: %d", res.StatusCode)
-    }
-
     body, err := ioutil.ReadAll(res.Body)
     if err != nil {
         log.Printf("Error reading response body: %v", err)
         return nil, err
     }
 
-    var data struct {
-        ID string `json:"id"`
-    }
+    var data models.Product
     if err := json.Unmarshal(body, &data); err != nil {
         log.Printf("Error parsing JSON: %v", err)
         return nil, err
     }
 
-    product := &models.Product{
-        OldId: data.ID,
-    }
-    return product, nil
+    return &data, nil
 }
