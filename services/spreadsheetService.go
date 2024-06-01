@@ -20,5 +20,4 @@ func ReadSheet(filename string) ([]models.URLData, error) {
 		urls = append(urls, models.URLData{URL: url})
 	}
 	return urls, nil
-
 }

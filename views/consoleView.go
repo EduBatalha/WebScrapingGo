@@ -1,26 +1,28 @@
 package views
 
 import (
-	"fmt"
 	"WebScrapingGo/models"
+	"fmt"
 )
 
-// DisplayProduct exibe o novo ID do produto.
-func DisplayProduct(product *models.Product) {
-	if product != nil {
-		fmt.Printf("New Product ID: %s\n", product.NewId)
-		fmt.Printf("Old Product ID: %s\n", product.OldId)
-	} else {
-		fmt.Println("Product não encontrado.")
-	}
+// DisplayProduct exibe as informações do produto e do old product.
+func DisplayProduct(product *models.Product, oldProduct *models.OldProduct) {
+    if product != nil {
+        fmt.Printf("New Product ID: %s\n", product.NewId)
+        if oldProduct != nil && oldProduct.OldId != "" {
+            fmt.Printf("Old Product ID: %s\n", oldProduct.OldId)
+        } else {
+            fmt.Println("Old Product ID não encontrado.")
+        }
+    }
 }
 
-// Retorno da API Trustvox
-func ShowMessage(message string) {
-    fmt.Println(message)
-}
-
-// DisplayError exibe erros que ocorrem durante a execução
+// DisplayError exibe erros que ocorrem durante a execução.
 func DisplayError(err error) {
 	fmt.Println("Erro:", err)
+}
+
+// ShowMessage exibe uma mensagem geral.
+func ShowMessage(message string) {
+	fmt.Println(message)
 }
