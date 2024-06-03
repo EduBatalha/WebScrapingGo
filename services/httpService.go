@@ -1,4 +1,3 @@
-// httpService.go
 package services
 
 import (
@@ -11,8 +10,10 @@ import (
 	"time"
 )
 
+// RetrieveOldProduct fetches old product details from the Trustvox API
 func RetrieveOldProduct(storeID, productID, storeToken string) (*models.OldProduct, error) {
 	url := fmt.Sprintf("https://trustvox.com.br/api/stores/%s/products/%s", storeID, productID)
+	log.Printf("URL: %s", url) // Log URL
 	client := &http.Client{
 		Timeout: 10 * time.Second, // Define um timeout para o cliente HTTP
 	}
@@ -25,6 +26,7 @@ func RetrieveOldProduct(storeID, productID, storeToken string) (*models.OldProdu
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "application/vnd.trustvox.com; version=1")
 	req.Header.Add("Authorization", "Bearer "+storeToken)
+	log.Printf("Request headers: %v", req.Header) // Log headers
 
 	res, err := client.Do(req)
 	if err != nil {
@@ -33,6 +35,7 @@ func RetrieveOldProduct(storeID, productID, storeToken string) (*models.OldProdu
 	}
 	defer res.Body.Close()
 
+	log.Printf("Response status: %d", res.StatusCode) // Log status code
 	if res.StatusCode != http.StatusOK {
 		log.Printf("Received non-OK HTTP status: %d", res.StatusCode)
 		return nil, fmt.Errorf("received non-OK HTTP status: %d", res.StatusCode)
@@ -44,13 +47,12 @@ func RetrieveOldProduct(storeID, productID, storeToken string) (*models.OldProdu
 		return nil, fmt.Errorf("error reading response body: %w", err)
 	}
 
-
+	log.Printf("Response body: %s", string(body)) // Log response body
 	var data models.OldProduct
 	if err := json.Unmarshal(body, &data); err != nil {
 		log.Printf("Error parsing JSON: %v", err)
 		return nil, fmt.Errorf("error parsing JSON: %w", err)
 	}
-
 
 	return &data, nil
 }

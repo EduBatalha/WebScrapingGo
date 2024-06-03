@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"WebScrapingGo/services"
 	"WebScrapingGo/models"
+	"WebScrapingGo/services"
 	"WebScrapingGo/views"
 )
 
@@ -16,11 +16,12 @@ func NewProductController(scraper *services.Scraper) *ScraperController {
 	}
 }
 
-func (pc *ScraperController) FetchAndDisplayProduct(url string, oldProduct *models.OldProduct) {
+func (pc *ScraperController) FetchAndDisplayProduct(url string, oldProduct *models.OldProduct) (*models.Product, error) {
 	product, err := pc.ScraperService.FetchProductCode(url)
 	if err != nil {
 		views.DisplayError(err)
-		return
+		return nil, err
 	}
 	views.DisplayProduct(product, oldProduct)
+	return product, nil
 }

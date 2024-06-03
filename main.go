@@ -1,40 +1,69 @@
 package main
 
 import (
-	"fmt"
-	"os"
 	"WebScrapingGo/controllers"
 	"WebScrapingGo/services"
 	"WebScrapingGo/views"
+	"context"
+	"fmt"
+	"os"
+
+	"github.com/go-rod/rod"
 )
 
 func main() {
-	// Verifica se os argumentos necessários da linha de comando foram fornecidos
 	if len(os.Args) < 4 {
-		fmt.Println("Uso: <executável> <storeID> <productID> <storeToken>")
+		fmt.Println("Usage: <executable> <storeID> <storeToken> <filename>")
 		return
 	}
 
-	// Extrai os argumentos da linha de comando
 	storeID := os.Args[1]
-	productID := os.Args[2]
-	storeToken := os.Args[3]
+	storeToken := os.Args[2]
+	filename := os.Args[3]
 
-	// Recupera os detalhes do produto antigo da API Trustvox
-    oldProduct, err := services.RetrieveOldProduct(storeID, productID, storeToken)
-    if err != nil {
-        views.DisplayError(err)
-        return
-    }
-	
+	// Lê os dados da planilha
+	productData, err := services.ReadSheet(filename)
+	if err != nil {
+		views.DisplayError(err)
+		return
+	}
+
 	// Inicializa o serviço de scraping e o controlador
-	scraperService := services.NewScraper()
+	browser := rod.New().MustConnect()
+	defer browser.MustClose()
+	scraperService := services.NewScraperWithBrowser(browser)
 	controller := controllers.NewProductController(scraperService)
 
-	// URL passada para FetchAndDisplayProduct
-	productURL := "https://sleepcalm.com.br/produto/colchao-plus?gad_source=1"
-	controller.FetchAndDisplayProduct(productURL, oldProduct)
+	// Itera sobre cada produto
+	for i, data := range productData {
+		// Recupera os detalhes do produto antigo da API usando OldProductCode
+		oldProduct, err := services.RetrieveOldProduct(storeID, data.OldProductCode, storeToken)
+		if err != nil {
+			views.DisplayError(err)
+			services.UpdateSheet(filename, i, "ID antigo")
+			continue
+		}
 
-	// Exibe os detalhes do produto recuperado
-	views.DisplayProduct(nil, oldProduct)
+		// Passa a URL do produto para FetchAndDisplayProduct
+		product, err := controller.FetchAndDisplayProduct(data.ProductURL, oldProduct)
+		if err != nil {
+			if err == context.DeadlineExceeded {
+				services.UpdateSheet(filename, i, "verificar")
+				fmt.Println("Ocorreu um timeout. Passando para a próxima linha.")
+				continue
+			}
+			views.DisplayError(err)
+			services.UpdateSheet(filename, i, "ID novo")
+			continue
+		}
+
+		// Verifica se ambos os IDs foram retornados corretamente
+		if oldProduct.OldId != "" && product.NewId != "" {
+			services.UpdateSheet(filename, i, "confere")
+		} else if oldProduct.OldId != "" {
+			services.UpdateSheet(filename, i, "ID antigo")
+		} else {
+			services.UpdateSheet(filename, i, "ID novo")
+		}
+	}
 }
