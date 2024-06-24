@@ -4,66 +4,47 @@ import (
 	"WebScrapingGo/controllers"
 	"WebScrapingGo/services"
 	"WebScrapingGo/views"
-	"context"
 	"fmt"
+	"net/http"
 	"os"
-
+	"time"
 	"github.com/go-rod/rod"
 )
 
+
 func main() {
-	if len(os.Args) < 4 {
-		fmt.Println("Usage: <executable> <storeID> <storeToken> <filename>")
-		return
-	}
+    if len(os.Args) < 4 {
+        fmt.Println("Usage: <executable> <storeID> <storeToken> <filename>")
+        return
+    }
 
-	storeID := os.Args[1]
-	storeToken := os.Args[2]
-	filename := os.Args[3]
+    storeID := os.Args[1]
+    storeToken := os.Args[2]
+    filename := os.Args[3]
 
-	// Lê os dados da planilha
-	productData, err := services.ReadSheet(filename)
-	if err != nil {
-		views.DisplayError(err)
-		return
-	}
+    // Inicializa os serviços necessários
+    client := &http.Client{Timeout: 10 * time.Second}
+    browser := rod.New().MustConnect()
+    defer browser.MustClose()
 
-	// Inicializa o serviço de scraping e o controlador
-	browser := rod.New().MustConnect()
-	defer browser.MustClose()
-	scraperService := services.NewScraperWithBrowser(browser)
-	controller := controllers.NewProductController(scraperService)
+    // Inicializa os serviços específicos
+    productService := services.NewProductService(client)
+    scraperService := services.NewScraperService(browser)
+    sheetService := services.SpreadsheetService{} // Instância direta de SpreadsheetService
 
-	// Itera sobre cada produto
-	for i, data := range productData {
-		// Recupera os detalhes do produto antigo da API usando OldProductCode
-		oldProduct, err := services.RetrieveOldProduct(storeID, data.OldProductCode, storeToken)
-		if err != nil {
-			views.DisplayError(err)
-			services.UpdateSheet(filename, i, "ID antigo")
-			continue
-		}
+    // Inicializa a console view
+    consoleView := views.ConsoleView{}
 
-		// Passa a URL do produto para FetchAndDisplayProduct
-		product, err := controller.FetchAndDisplayProduct(data.ProductURL, oldProduct)
-		if err != nil {
-			if err == context.DeadlineExceeded {
-				services.UpdateSheet(filename, i, "verificar")
-				fmt.Println("Ocorreu um timeout. Passando para a próxima linha.")
-				continue
-			}
-			views.DisplayError(err)
-			services.UpdateSheet(filename, i, "ID novo")
-			continue
-		}
+    // Inicializa o controlador de produtos
+    productController := controllers.NewProductController(productService, scraperService, sheetService, consoleView)
 
-		// Verifica se ambos os IDs foram retornados corretamente
-		if oldProduct.OldId != "" && product.NewId != "" {
-			services.UpdateSheet(filename, i, "confere")
-		} else if oldProduct.OldId != "" {
-			services.UpdateSheet(filename, i, "ID antigo")
-		} else {
-			services.UpdateSheet(filename, i, "ID novo")
-		}
-	}
+    // Executa o processo de leitura da planilha e processamento de produtos
+    if err := processProducts(storeID, storeToken, filename, productController); err != nil {
+        consoleView.DisplayError(err) // Exibe o erro usando ConsoleView
+    }
+}
+
+func processProducts(storeID, storeToken, filename string, productController *controllers.ProductController) error {
+    // Processa os produtos usando o controller
+    return productController.ProcessProducts(storeID, storeToken, filename)
 }

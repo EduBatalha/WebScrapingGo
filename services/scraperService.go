@@ -2,30 +2,27 @@ package services
 
 import (
 	"context"
-	"log"
-	"time"
 	"fmt"
+	"time"
 	"WebScrapingGo/models"
 	"github.com/go-rod/rod"
 )
 
-type Scraper struct {
+type ScraperService interface {
+	FetchProductCode(url string) (*models.Product, error)
+}
+
+type scraperService struct {
 	browser *rod.Browser
 }
 
-func NewScraper() *Scraper {
-	return &Scraper{}
+func NewScraperService(browser *rod.Browser) ScraperService {
+	return &scraperService{browser: browser}
 }
 
-func NewScraperWithBrowser(browser *rod.Browser) *Scraper {
-	return &Scraper{browser: browser}
-}
+func (ss *scraperService) FetchProductCode(url string) (*models.Product, error) {
+	page := ss.browser.MustPage(url)
 
-func (s *Scraper) FetchProductCode(url string) (*models.Product, error) {
-	log.Println("Abrindo página:", url)
-	page := s.browser.MustPage(url)
-
-	// Cria um contexto com timeout de 10 segundos
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -35,28 +32,23 @@ func (s *Scraper) FetchProductCode(url string) (*models.Product, error) {
 
 	go func() {
 		defer close(done)
-		log.Println("Esperando até que um dos elementos esteja pronto...")
 		el, err = page.Element("[data-trustvox-product-code], [data-trustvox-product-code-js]")
 	}()
 
 	select {
 	case <-ctx.Done():
-		log.Println("Tempo limite de 10 segundos excedido.")
 		return nil, ctx.Err()
 	case <-done:
 		if err != nil {
-			log.Printf("Erro ao esperar pelo elemento: %v", err)
 			return nil, err
 		}
 	}
 
 	productCode, err := getAttributeValue(el, "data-trustvox-product-code", "data-trustvox-product-code-js")
 	if err != nil {
-		log.Printf("Erro ao obter atributos: %v", err)
 		return nil, err
 	}
 
-	log.Println("Produto encontrado com sucesso!")
 	return &models.Product{NewId: productCode}, nil
 }
 

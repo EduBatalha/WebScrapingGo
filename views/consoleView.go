@@ -1,28 +1,20 @@
+// Dentro de views/console_view.go
+
 package views
 
 import (
-	"WebScrapingGo/models"
 	"fmt"
 )
 
-// DisplayProduct exibe as informações do produto e do old product.
-func DisplayProduct(product *models.Product, oldProduct *models.OldProduct) {
-    if product != nil {
-        fmt.Printf("New Product ID: %s\n", product.NewId)
-        if oldProduct != nil && oldProduct.OldId != "" {
-            fmt.Printf("Old Product ID: %s\n", oldProduct.OldId)
-        } else {
-            fmt.Println("Old Product ID não encontrado.")
-        }
-    }
-}
+// ConsoleView define métodos para exibir mensagens no console.
+type ConsoleView struct{}
 
-// DisplayError exibe erros que ocorrem durante a execução.
-func DisplayError(err error) {
+// DisplayError exibe um erro no console.
+func (cv ConsoleView) DisplayError(err error) {
 	fmt.Println("Erro:", err)
 }
 
-// ShowMessage exibe uma mensagem geral.
-func ShowMessage(message string) {
+// ShowMessage exibe uma mensagem no console.
+func (cv ConsoleView) ShowMessage(message string) {
 	fmt.Println(message)
 }
