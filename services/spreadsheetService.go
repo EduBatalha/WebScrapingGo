@@ -57,7 +57,7 @@ func (ss *SpreadsheetService) ReadSheet(filename string) ([]models.SheetData, er
 
 // UpdateSheet atualiza a coluna "Ação" no arquivo Excel para o registro na linha rowIndex
 func (ss *SpreadsheetService) UpdateSheet(filename string, rowIndex int, action string) error {
-	// Abre o arquivo Excel para leitura e escrita
+	// Abre o arquivo Excel para escrita
 	wb, err := xlsx.OpenFile(filename)
 	if err != nil {
 		return fmt.Errorf("failed to open file: %w", err)
